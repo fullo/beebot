@@ -85,7 +85,7 @@ const generateRandomPoints = () => {
     }
   };
 
-  const isValidCoordinate = (x, y) => x >= 0 && x < GRID.SIZE && y >= 0 && y < GRID.SIZE;
+  const isValidCoordinate = (x, y) => x >= 0 && x < GRID_CONFIG.SIZE && y >= 0 && y < GRID_CONFIG.SIZE;
 
   const isValidMove = (newX, newY) => isValidCoordinate(newX, newY);
 
