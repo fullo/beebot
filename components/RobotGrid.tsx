@@ -1,9 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '../components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowUp, RotateCw, RotateCcw, Repeat, Shuffle, Compass } from 'lucide-react';
+
+// Configurazione direzioni
+const DIRECTIONS = {
+  EAST: 0,
+  NORTH: 90,
+  WEST: 180,
+  SOUTH: 270
+};
+
+// Configurazione griglia
+const GRID_CONFIG = {
+  SIZE: 4,
+  LETTERS: ['A', 'B', 'C', 'D'],
+  DEFAULT_DIRECTION: DIRECTIONS.NORTH
+};
 
 const RobotGrid = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 }); // A1 è (0,0)
@@ -11,7 +26,7 @@ const RobotGrid = () => {
   const [moves, setMoves] = useState([]);
   const [startPoint, setStartPoint] = useState({ x: 0, y: 0 });
   const [endPoint, setEndPoint] = useState({ x: 2, y: 2 });
-  const [usedMoves, setUsedMoves] = useState({
+  const getInitialMoves = () => ({
     forward1: false,
     forward2: false,
     back1: false,
@@ -21,38 +36,45 @@ const RobotGrid = () => {
     rotate180cw: false,
     rotate180ccw: false
   });
+
+  const [usedMoves, setUsedMoves] = useState(getInitialMoves());
   const [gameStarted, setGameStarted] = useState(false);
 
-  const generateRandomPoints = () => {
-    const newStart = {
-      x: Math.floor(Math.random() * 4),
-      y: Math.floor(Math.random() * 4)
-    };
-    let newEnd;
-    do {
-      newEnd = {
-        x: Math.floor(Math.random() * 4),
-        y: Math.floor(Math.random() * 4)
-      };
-    } while (newEnd.x === newStart.x && newEnd.y === newStart.y);
+/**
+ * Genera una coordinata casuale nella griglia
+ */
+const generateRandomCoordinate = () => ({
+  x: Math.floor(Math.random() * GRID_CONFIG.SIZE),
+  y: Math.floor(Math.random() * GRID_CONFIG.SIZE)
+});
 
-    setStartPoint(newStart);
-    setEndPoint(newEnd);
-    setPosition(newStart);
-    setDirection(90);
-    setMoves([]);
-    setGameStarted(false);
-    setUsedMoves({
-      forward1: false,
-      forward2: false,
-      back1: false,
-      back2: false,
-      rotate90cw: false,
-      rotate90ccw: false,
-      rotate180cw: false,
-      rotate180ccw: false
-    });
-  };
+/**
+ * Verifica se due coordinate sono uguali
+ */
+const areSameCoordinates = (coord1, coord2) => 
+  coord1.x === coord2.x && coord1.y === coord2.y;
+
+/**
+ * Genera punti di partenza e arrivo casuali
+ */
+const generateRandomPoints = () => {
+  // Genera punto di partenza
+  const newStart = generateRandomCoordinate();
+  // Genera punto di arrivo diverso da quello di partenza
+  let newEnd;
+  do {
+    newEnd = generateRandomCoordinate();
+  } while (areSameCoordinates(newStart, newEnd));
+
+  // Imposta i nuovi punti e resetta lo stato del gioco
+  setStartPoint(newStart);
+  setEndPoint(newEnd);
+  setRobotPosition(newStart);
+  setRobotDirection(DIRECTIONS.NORTH);
+  setMovementsList([]);
+  setIsGameStarted(false);
+  setAvailableMoves(getInitialMoves());
+};
 
   const changeInitialDirection = () => {
     if (!gameStarted) {
@@ -63,9 +85,9 @@ const RobotGrid = () => {
     }
   };
 
-  const isValidMove = (newX, newY) => {
-    return newX >= 0 && newX < 4 && newY >= 0 && newY < 4;
-  };
+  const isValidCoordinate = (x, y) => x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE;
+
+  const isValidMove = (newX, newY) => isValidCoordinate(newX, newY);
 
   const toChessNotation = (x, y) => {
     const letters = ['A', 'B', 'C', 'D'];
@@ -74,23 +96,31 @@ const RobotGrid = () => {
 
   const getDirectionName = (dir) => {
     switch(dir) {
-      case 0: return 'Est';
-      case 90: return 'Nord';
-      case 180: return 'Ovest';
-      case 270: return 'Sud';
+      case DIRECTIONS.EAST: return 'Est';
+      case DIRECTIONS.NORTH: return 'Nord';
+      case DIRECTIONS.WEST: return 'Ovest';
+      case DIRECTIONS.SOUTH: return 'Sud';
       default: return '';
     }
   };
 
   const [history, setHistory] = useState([]);
 
-  const addToHistory = (oldState) => {
-    setHistory([...history, {
-      position: oldState.position,
-      direction: oldState.direction,
-      moves: oldState.moves,
-      usedMoves: oldState.usedMoves
-    }]);
+  // Struttura per lo stato del gioco
+  const createGameState = (position, direction, moves, usedMoves) => ({
+    position: { ...position },
+    direction,
+    moves: [...moves],
+    usedMoves: { ...usedMoves }
+  });
+
+  const addToHistory = (currentState) => {
+    setHistory([...history, createGameState(
+      currentState.position,
+      currentState.direction,
+      currentState.moves,
+      currentState.usedMoves
+    )]);
   };
 
   const undoLastMove = () => {
@@ -229,7 +259,7 @@ const RobotGrid = () => {
     const endValue = e.target.end.value.toUpperCase();
 
     if (!validateCoordinate(startValue) || !validateCoordinate(endValue)) {
-      setFormError('Le coordinate devono essere nel formato A1-D4');
+      setFormError('Le coordinate devono essere nel formato A1-E5');
       return;
     }
 
@@ -424,7 +454,7 @@ const RobotGrid = () => {
             
             <div className="grid grid-cols-4 gap-1 w-96 h-96">
               {[...Array(16)].map((_, index) => {
-                const y = 4 - Math.floor(index / 4);  // Invertiamo l'asse Y
+                const y = 3 - Math.floor(index / 4);  // Invertiamo l'asse Y
                 const x = index % 4;
                 const isCurrentPosition = position.x === x && position.y === y;
                 const isStartPoint = startPoint.x === x && startPoint.y === y;
