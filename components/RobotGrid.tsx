@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -229,7 +229,7 @@ const RobotGrid = () => {
     const endValue = e.target.end.value.toUpperCase();
 
     if (!validateCoordinate(startValue) || !validateCoordinate(endValue)) {
-      setFormError('Le coordinate devono essere nel formato A1-E5');
+      setFormError('Le coordinate devono essere nel formato A1-D4');
       return;
     }
 
@@ -422,10 +422,10 @@ const RobotGrid = () => {
             <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 font-bold text-gray-600">O</div>
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 font-bold text-gray-600">E</div>
             
-            <div className="grid grid-cols-5 gap-1 w-96 h-96">
-              {[...Array(25)].map((_, index) => {
-                const y = 4 - Math.floor(index / 5);  // Invertiamo l'asse Y
-                const x = index % 5;
+            <div className="grid grid-cols-4 gap-1 w-96 h-96">
+              {[...Array(16)].map((_, index) => {
+                const y = 4 - Math.floor(index / 4);  // Invertiamo l'asse Y
+                const x = index % 4;
                 const isCurrentPosition = position.x === x && position.y === y;
                 const isStartPoint = startPoint.x === x && startPoint.y === y;
                 const isEndPoint = endPoint.x === x && endPoint.y === y;
